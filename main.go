@@ -2,48 +2,20 @@ package main
 
 import (
 	"net/http"
-	"regexp"
+
+	h "github.com/ovguschin90/todolist/internal/handler"
+	th "github.com/ovguschin90/todolist/internal/handler/todo"
+	"github.com/ovguschin90/todolist/internal/router"
 )
 
 func main() {
-	router := &Router{}
+	router := &router.Router{}
 
 	//AddRoutes
-	router.AddRoute("^/$", index)
+	router.AddRoute(http.MethodGet, "/", h.Index)
+	router.AddRoute(http.MethodGet, "/todos", th.List)
+	// router.AddRoute("/todos/id=[0-9]+", todo.ShowTask)
+	router.AddRoute(http.MethodPost, "/todos/add", th.AddTask)
 
 	http.ListenAndServe(":8000", router)
-}
-
-type Route struct {
-	pattern *regexp.Regexp
-	handler http.HandlerFunc
-}
-
-type Router struct {
-	routes []*Route
-}
-
-func (rt *Router) AddRoute(pattern string, handler http.HandlerFunc) {
-	route := &Route{
-		pattern: regexp.MustCompile(pattern),
-		handler: handler,
-	}
-	rt.routes = append(rt.routes, route)
-}
-
-func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-
-	for _, route := range rt.routes {
-		if route.pattern.MatchString(path) {
-			route.handler.ServeHTTP(w, r)
-			return
-		}
-	}
-
-	http.NotFound(w, r)
-}
-
-func index(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World!"))
 }

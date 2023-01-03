@@ -9,6 +9,7 @@ install: clean
 
 	go install github.com/kisielk/errcheck@latest
 	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install golang.org/x/tools/cmd/goimports@latest
 
 clean:
 	rm -rf go.mod go.sum bin/todolist
@@ -28,3 +29,6 @@ test:
 errorcheck:
 	go vet ./...
 	~/go/bin/staticcheck ./...
+
+format:
+	go fmt ./...
