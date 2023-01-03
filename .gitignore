@@ -15,3 +15,4 @@
 # vendor/
 bin
 bin/todolist
+.vscode
