@@ -2,6 +2,7 @@ package todo
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/ovguschin90/todolist/app/todo"
@@ -11,33 +12,38 @@ type Response struct {
 	TaskList *todo.TodoList `json:"task_list"`
 }
 
-func List(w http.ResponseWriter, r *http.Request) {
-	var (
-		resp []byte
-		err  error
-	)
-	if resp, err = json.Marshal(Response{TaskList: todo.List()}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+type Request struct {
+	Name string `json:"name"`
+}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+func List(w http.ResponseWriter, r *http.Request) {
+	makeResponse(w)
 }
 
 func AddTask(w http.ResponseWriter, r *http.Request) {
-	task := &todo.Task{}
-	taskList := todo.List()
+	data := r.Body
+	defer r.Body.Close()
 
-	//read POST data
-	data := r.PostForm
-	task.Name = data.Get("name")
-	taskList.AddTask(task.Name)
+	body, err := io.ReadAll(data)
 
+	if err != nil {
+		http.Error(w, http.ErrBodyNotAllowed.Error(), http.StatusBadRequest)
+		return
+	}
+	var req Request
+	_ = json.Unmarshal(body, &req)
+	todo.AddTask(req.Name)
+
+	makeResponse(w)
+}
+
+func makeResponse(w http.ResponseWriter) {
 	var (
 		resp []byte
 		err  error
 	)
-	if resp, err = json.Marshal(Response{TaskList: todo.List()}); err != nil {
+	tasks := todo.List()
+	if resp, err = json.Marshal(Response{TaskList: tasks}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 

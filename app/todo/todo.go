@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	TaskList *TodoList
-	mu       sync.Mutex
+	tasksList *TodoList
+	mu        sync.Mutex
 )
 
 type Task struct {
@@ -16,29 +16,43 @@ type Task struct {
 }
 
 type TodoList struct {
-	tasks []*Task
-}
-
-func NewTodoList() {
-	TaskList = &TodoList{}
+	tasks map[uint]*Task
 }
 
 func List() *TodoList {
-	return TaskList
+	initTodoList()
+	return tasksList
 }
 
-func (tl *TodoList) AddTask(name string) {
+func AddTask(name string) {
+	initTodoList()
 	mu.Lock()
 	defer mu.Unlock()
-	tl.tasks = append(tl.tasks, &Task{
-		Name: name,
-	})
+	tasksList.tasks[getActualIndex(tasksList.tasks)] = &Task{Name: name}
 }
 
-func ShowTask() {
-
+func initTodoList() {
+	if tasksList == nil {
+		tasksList = &TodoList{tasks: make(map[uint]*Task)}
+	}
 }
 
-func DeleteTask() {
+func getLastIndex(list map[uint]*Task) uint {
+	var current uint
 
+	if len(list) == 0 {
+		return current
+	}
+
+	for i := range list {
+		if current < i {
+			current = i
+		}
+	}
+
+	return current
+}
+
+func getActualIndex(list map[uint]*Task) uint {
+	return getLastIndex(list) + 1
 }
