@@ -31,6 +31,23 @@ func List() map[uint]*Task {
 	return tasksList.tasks
 }
 
+func Report() []string {
+	if isEmptyTaskList() {
+		return nil
+	}
+
+	var m []string
+	status := "In Progress"
+	for _, task := range tasksList.tasks {
+		if task.IsCompleted {
+			status = "Done"
+		}
+		m = append(m, task.Name+" is "+status)
+	}
+
+	return m
+}
+
 func AddTask(r map[string]string) error {
 	if isEmptyTaskList() {
 		initTodoList()

@@ -15,9 +15,10 @@ type Response struct {
 }
 
 type Request struct {
-	Name string `json:"name,omitempty"`
-	Due  string `json:"due,omitempty"`
-	ID   uint   `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Due         string `json:"due,omitempty"`
+	ID          uint   `json:"id,omitempty"`
+	IsCompleted bool   `json:"is_completed"`
 }
 
 func (r *Request) GetArray() map[string]string {
@@ -32,12 +33,14 @@ func (r *Request) GetArray() map[string]string {
 	if r.ID != 0 {
 		m["id"] = strconv.Itoa(int(r.ID))
 	}
+	m["is_completed"] = strconv.FormatBool(r.IsCompleted)
 
 	return m
 }
 
 func ListTasks(w http.ResponseWriter, r *http.Request) {
-	makeResponse(w, todo.List())
+	taskList := todo.Report()
+	makeResponse(w, taskList)
 }
 
 func handleTask(w http.ResponseWriter, r *http.Request, handler func(map[string]string) error) {
