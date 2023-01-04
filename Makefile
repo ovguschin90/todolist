@@ -10,6 +10,7 @@ install: clean
 	go install github.com/kisielk/errcheck@latest
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install golang.org/x/tools/cmd/goimports@latest
+	go get -u github.com/swaggo/swag/cmd/swag
 
 clean:
 	rm -rf go.mod go.sum bin/todolist
@@ -32,3 +33,6 @@ errorcheck:
 
 format:
 	go fmt ./...
+
+swagger-init:
+	~/go/bin/swag init

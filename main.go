@@ -6,8 +6,6 @@ import (
 	h "github.com/ovguschin90/todolist/internal/handler"
 	th "github.com/ovguschin90/todolist/internal/handler/todo"
 	"github.com/ovguschin90/todolist/internal/router"
-
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func main() {
@@ -20,9 +18,9 @@ func main() {
 	router.AddRoute(http.MethodPost, th.Show.String(), th.ShowTask)
 	router.AddRoute(http.MethodDelete, th.Del.String(), th.DeleteTask)
 	router.AddRoute(http.MethodPut, th.Edit.String(), th.EditTask)
-	router.AddRoute(http.MethodGet, "/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("http://localhost:8000/swagger/docs.json"),
-	))
+	router.AddRoute("GET", "/swagger.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "docs/swagger.json")
+	})
 
 	// service info
 	router.RoutesList()
