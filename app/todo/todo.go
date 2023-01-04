@@ -16,7 +16,7 @@ var (
 
 type Task struct {
 	Name        string     `json:"name,omitempty"`
-	isCompleted bool       `json:"is_completed,omitempty"`
+	IsCompleted bool       `json:"is_completed,omitempty"`
 	Due         *time.Time `json:"due,omitempty"`
 }
 
@@ -94,6 +94,43 @@ func ShowTask(r map[string]string) (*Task, error) {
 	if _, ok := tasksList.tasks[uint(id)]; ok {
 		return tasksList.tasks[uint(id)], nil
 	}
+	return nil, nil
+}
+
+func EditTask(r map[string]string) (*Task, error) {
+	if isEmptyTaskList() {
+		return nil, nil
+	}
+	mu.Lock()
+	defer mu.Unlock()
+
+	var (
+		err       error
+		id        uint
+		parsedInt int
+	)
+
+	parsedInt, err = strconv.Atoi(r["id"])
+	if err != nil {
+		return nil, err
+	}
+
+	id = uint(parsedInt)
+	if task, ok := tasksList.tasks[uint(id)]; ok {
+		if r["name"] != "" {
+			task.Name = r["name"]
+		}
+
+		if r["is_completed"] != "" {
+			task.IsCompleted, err = strconv.ParseBool(r["is_completed"])
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return task, nil
+	}
+
 	return nil, nil
 }
 

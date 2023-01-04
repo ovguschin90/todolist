@@ -17,8 +17,9 @@ func main() {
 	router.AddRoute(http.MethodPost, th.Add.String(), th.AddTask)
 	router.AddRoute(http.MethodPost, th.Show.String(), th.ShowTask)
 	router.AddRoute(http.MethodDelete, th.Del.String(), th.DeleteTask)
-	// router.AddRoute(http.MethodPut, "/todos/edit", th.EditTask
+	router.AddRoute(http.MethodPut, th.Edit.String(), th.EditTask)
 
+	// service info
 	router.RoutesList()
 
 	http.ListenAndServe(":8000", router)

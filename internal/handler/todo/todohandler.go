@@ -10,30 +10,6 @@ import (
 	"github.com/ovguschin90/todolist/app/todo"
 )
 
-type Operation uint
-
-const (
-	List Operation = iota
-	Add
-	Del
-	Show
-)
-
-func (o Operation) String() string {
-	switch o {
-	case List:
-		return "/todos"
-	case Add:
-		return "/todos/add"
-	case Del:
-		return "/todos/del"
-	case Show:
-		return "/todos/show"
-	default:
-		return "/"
-	}
-}
-
 type Response struct {
 	TaskList map[uint]*todo.Task `json:"task_list"`
 }
@@ -61,15 +37,7 @@ func (r *Request) GetArray() map[string]string {
 }
 
 func ListTasks(w http.ResponseWriter, r *http.Request) {
-	var (
-		resp []byte
-		err  error
-	)
-	tasks := todo.List()
-	if resp, err = json.Marshal(Response{TaskList: tasks}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	makeResponse(w, resp)
+	makeResponse(w, todo.List())
 }
 
 func handleTask(w http.ResponseWriter, r *http.Request, handler func(map[string]string) error) {
@@ -104,6 +72,22 @@ func ShowTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	task, err := todo.ShowTask(req.GetArray())
+	if err != nil {
+		http.Error(w, "bad body", http.StatusBadRequest)
+		return
+	}
+
+	makeResponse(w, task)
+}
+
+func EditTask(w http.ResponseWriter, r *http.Request) {
+	req, err := handleRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	task, err := todo.EditTask(req.GetArray())
 	if err != nil {
 		http.Error(w, "bad body", http.StatusBadRequest)
 		return
@@ -159,6 +143,7 @@ func validate(r *http.Request, req *Request) error {
 		}
 	case Del.String():
 	case Show.String():
+	case Edit.String():
 		if req.ID == 0 {
 			return fmt.Errorf("no id")
 		}
