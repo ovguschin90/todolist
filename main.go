@@ -13,10 +13,11 @@ func main() {
 
 	//AddRoutes
 	router.AddRoute(http.MethodGet, "/", h.Index)
-	router.AddRoute(http.MethodGet, "/todos", th.List)
-	router.AddRoute(http.MethodPost, "/todos/add", th.AddTask)
-	// router.AddRoute(http.MethodGet, "/todos/id=[0-9]+", th.ShowTask)
-	// router.AddRoute(http.MethodPost, "/todos/del", th.DeleteTask)
+	router.AddRoute(http.MethodGet, th.List.String(), th.ListTasks)
+	router.AddRoute(http.MethodPost, th.Add.String(), th.AddTask)
+	router.AddRoute(http.MethodPost, th.Show.String(), th.ShowTask)
+	router.AddRoute(http.MethodDelete, th.Del.String(), th.DeleteTask)
+	// router.AddRoute(http.MethodPut, "/todos/edit", th.EditTask
 
 	router.RoutesList()
 

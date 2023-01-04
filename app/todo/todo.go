@@ -1,45 +1,112 @@
 package todo
 
 import (
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 )
 
 var (
-	tasksList *TodoList
-	mu        sync.Mutex
+	tasksList   *TodoList
+	mu          sync.Mutex
+	timeLayout  = "01/02/2006"
+	trimCharset = " "
 )
 
 type Task struct {
-	Name string
-	// isCompleted bool
-	// Due         *time.Time
+	Name        string     `json:"name,omitempty"`
+	isCompleted bool       `json:"is_completed,omitempty"`
+	Due         *time.Time `json:"due,omitempty"`
 }
 
 type TodoList struct {
 	tasks map[uint]*Task
 }
 
-func List() *TodoList {
-	initTodoList()
-	return tasksList
+func List() map[uint]*Task {
+	if isEmptyTaskList() {
+		initTodoList()
+	}
+	return tasksList.tasks
 }
 
-func AddTask(name string) {
-	initTodoList()
+func AddTask(r map[string]string) error {
+	if isEmptyTaskList() {
+		initTodoList()
+	}
 	mu.Lock()
 	defer mu.Unlock()
-	tasksList.tasks[getActualIndex(tasksList.tasks)] = &Task{Name: name}
+
+	var err error
+	if tasksList.tasks[getActualIndex(tasksList.tasks)], err = makeTask(r["name"], r["due"]); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DelTask(r map[string]string) error {
+	if isEmptyTaskList() {
+		return nil
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	var (
+		err       error
+		id        uint
+		parsedInt int
+	)
+
+	parsedInt, err = strconv.Atoi(r["id"])
+	if err != nil {
+		return err
+	}
+
+	id = uint(parsedInt)
+	if _, ok := tasksList.tasks[uint(id)]; ok {
+		delete(tasksList.tasks, id)
+	}
+	return nil
+}
+
+func ShowTask(r map[string]string) (*Task, error) {
+	if isEmptyTaskList() {
+		return nil, nil
+	}
+	mu.Lock()
+	defer mu.Unlock()
+
+	var (
+		err       error
+		id        uint
+		parsedInt int
+	)
+
+	parsedInt, err = strconv.Atoi(r["id"])
+	if err != nil {
+		return nil, err
+	}
+
+	id = uint(parsedInt)
+	if _, ok := tasksList.tasks[uint(id)]; ok {
+		return tasksList.tasks[uint(id)], nil
+	}
+	return nil, nil
 }
 
 func initTodoList() {
-	if tasksList == nil {
-		tasksList = &TodoList{tasks: make(map[uint]*Task)}
-	}
+	tasksList = &TodoList{tasks: make(map[uint]*Task)}
+}
+
+func isEmptyTaskList() bool {
+	return tasksList == nil
 }
 
 func getLastIndex(list map[uint]*Task) uint {
 	var current uint
-
 	if len(list) == 0 {
 		return current
 	}
@@ -55,4 +122,18 @@ func getLastIndex(list map[uint]*Task) uint {
 
 func getActualIndex(list map[uint]*Task) uint {
 	return getLastIndex(list) + 1
+}
+
+func makeTask(name, due string) (*Task, error) {
+	name = strings.Trim(name, trimCharset)
+	due = strings.Trim(due, trimCharset)
+	dueDate, err := time.Parse(timeLayout, due)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Task{
+		Name: name,
+		Due:  &dueDate,
+	}, nil
 }

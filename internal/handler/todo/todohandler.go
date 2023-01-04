@@ -2,42 +2,65 @@ package todo
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/ovguschin90/todolist/app/todo"
 )
 
+type Operation uint
+
+const (
+	List Operation = iota
+	Add
+	Del
+	Show
+)
+
+func (o Operation) String() string {
+	switch o {
+	case List:
+		return "/todos"
+	case Add:
+		return "/todos/add"
+	case Del:
+		return "/todos/del"
+	case Show:
+		return "/todos/show"
+	default:
+		return "/"
+	}
+}
+
 type Response struct {
-	TaskList *todo.TodoList `json:"task_list"`
+	TaskList map[uint]*todo.Task `json:"task_list"`
 }
 
 type Request struct {
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
+	Due  string `json:"due,omitempty"`
+	ID   uint   `json:"id,omitempty"`
 }
 
-func List(w http.ResponseWriter, r *http.Request) {
-	makeResponse(w)
-}
+func (r *Request) GetArray() map[string]string {
+	m := make(map[string]string)
 
-func AddTask(w http.ResponseWriter, r *http.Request) {
-	data := r.Body
-	defer r.Body.Close()
-
-	body, err := io.ReadAll(data)
-
-	if err != nil {
-		http.Error(w, http.ErrBodyNotAllowed.Error(), http.StatusBadRequest)
-		return
+	if r.Name != "" {
+		m["name"] = r.Name
 	}
-	var req Request
-	_ = json.Unmarshal(body, &req)
-	todo.AddTask(req.Name)
+	if r.Due != "" {
+		m["due"] = r.Due
+	}
+	if r.ID != 0 {
+		m["id"] = strconv.Itoa(int(r.ID))
+	}
 
-	makeResponse(w)
+	return m
 }
 
-func makeResponse(w http.ResponseWriter) {
+func ListTasks(w http.ResponseWriter, r *http.Request) {
 	var (
 		resp []byte
 		err  error
@@ -46,7 +69,99 @@ func makeResponse(w http.ResponseWriter) {
 	if resp, err = json.Marshal(Response{TaskList: tasks}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	makeResponse(w, resp)
+}
+
+func handleTask(w http.ResponseWriter, r *http.Request, handler func(map[string]string) error) {
+	req, err := handleRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = handler(req.GetArray())
+	if err != nil {
+		http.Error(w, "bad body", http.StatusBadRequest)
+		return
+	}
+
+	makeResponse(w, todo.List())
+}
+
+func AddTask(w http.ResponseWriter, r *http.Request) {
+	handleTask(w, r, todo.AddTask)
+}
+
+func DeleteTask(w http.ResponseWriter, r *http.Request) {
+	handleTask(w, r, todo.DelTask)
+}
+
+func ShowTask(w http.ResponseWriter, r *http.Request) {
+	req, err := handleRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	task, err := todo.ShowTask(req.GetArray())
+	if err != nil {
+		http.Error(w, "bad body", http.StatusBadRequest)
+		return
+	}
+
+	makeResponse(w, task)
+}
+
+func makeResponse(w http.ResponseWriter, data interface{}) {
+	var (
+		resp []byte
+		err  error
+	)
+	if resp, err = json.Marshal(data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp)
+}
+
+func handleRequest(r *http.Request) (*Request, error) {
+	data := r.Body
+	defer r.Body.Close()
+
+	body, err := io.ReadAll(data)
+	if err != nil {
+		return nil, http.ErrBodyNotAllowed
+	}
+
+	req := &Request{}
+	err = json.Unmarshal(body, req)
+	if err != nil {
+		return nil, http.ErrBodyNotAllowed
+	}
+
+	err = validate(r, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func validate(r *http.Request, req *Request) error {
+	switch r.URL.Path {
+	case Add.String():
+		if req.Name == "" {
+			return fmt.Errorf("no name")
+		}
+		if req.Due == "" {
+			return fmt.Errorf("no due time")
+		}
+	case Del.String():
+	case Show.String():
+		if req.ID == 0 {
+			return fmt.Errorf("no id")
+		}
+	}
+	return nil
 }
