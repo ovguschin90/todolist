@@ -31,23 +31,37 @@ func List() map[uint]*Task {
 	return tasksList.tasks
 }
 
-func Report() []string {
+type ReportResponse struct {
+	TaskName string `json:"task_name"`
+	Status   string `json:"status"`
+}
+
+func Report() []*ReportResponse {
 	if isEmptyTaskList() {
 		return nil
 	}
 	mu.RLock()
 	defer mu.RUnlock()
 
-	var m []string
-	status := "In Progress"
+	var m []*ReportResponse
 	for _, task := range tasksList.tasks {
-		if task.IsCompleted {
-			status = "Done"
+		r := &ReportResponse{
+			TaskName: task.Name,
+			Status:   status(task.IsCompleted),
 		}
-		m = append(m, task.Name+" is "+status)
+
+		m = append(m, r)
 	}
 
 	return m
+}
+
+func status(status bool) string{
+	if status {
+		return "Done"
+	}
+
+	return "In progress"
 }
 
 func AddTask(r map[string]string) error {

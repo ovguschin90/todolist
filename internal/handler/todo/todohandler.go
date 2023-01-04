@@ -1,5 +1,20 @@
 package todo
 
+//	@title			Todo API
+//	@version		1.0
+//	@description	A simple to-do list API.
+
+//	@tag.name			todos
+//	@tag.description	Operations for managing to-do tasks.
+
+//	@accept		json
+//	@produce	json
+
+//	@success	200	{array}		todo.Task	"A list of tasks"
+//	@failure	400	{object}	api.Error	"Invalid request"
+//	@failure	401	{object}	api.Error	"Unauthorized"
+//	@failure	500	{object}	api.Error	"Internal server error"
+
 import (
 	"encoding/json"
 	"fmt"
@@ -38,9 +53,10 @@ func (r *Request) GetArray() map[string]string {
 	return m
 }
 
+// @router	/tasks [get]
 func ListTasks(w http.ResponseWriter, r *http.Request) {
-	taskList := todo.Report()
-	makeResponse(w, taskList)
+	report := todo.Report()
+	makeResponse(w, report)
 }
 
 func handleTask(w http.ResponseWriter, r *http.Request, handler func(map[string]string) error) {

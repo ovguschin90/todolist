@@ -16,3 +16,4 @@
 bin
 bin/todolist
 .vscode
+.vscode/launch.json

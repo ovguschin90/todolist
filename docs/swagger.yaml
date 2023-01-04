@@ -1,0 +1,7 @@
+info:
+  contact: {}
+paths:
+  /tasks:
+    get:
+      responses: {}
+swagger: "2.0"
