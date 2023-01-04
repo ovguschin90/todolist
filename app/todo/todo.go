@@ -9,7 +9,7 @@ import (
 
 var (
 	tasksList   *TodoList
-	mu          sync.Mutex
+	mu          sync.RWMutex
 	timeLayout  = "01/02/2006"
 	trimCharset = " "
 )
@@ -35,6 +35,8 @@ func Report() []string {
 	if isEmptyTaskList() {
 		return nil
 	}
+	mu.RLock()
+	defer mu.RUnlock()
 
 	var m []string
 	status := "In Progress"
@@ -93,8 +95,8 @@ func ShowTask(r map[string]string) (*Task, error) {
 	if isEmptyTaskList() {
 		return nil, nil
 	}
-	mu.Lock()
-	defer mu.Unlock()
+	mu.RLock()
+	defer mu.RUnlock()
 
 	var (
 		err       error
